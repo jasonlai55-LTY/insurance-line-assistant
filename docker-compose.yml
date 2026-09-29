@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: insurance_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: insurance_assistant_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d insurance_assistant_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: insurance_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: insurance_backend
+    restart: always
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres_password
+      - POSTGRES_DB=insurance_assistant_db
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres_password@postgres:5432/insurance_assistant_db
+      - REDIS_URL=redis://redis:6379/0
+      - USE_SQLITE=0
+      - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET:-mock_line_channel_secret}
+      - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN:-mock_line_channel_access_token}
+      - LINE_LIFF_ID=${LINE_LIFF_ID:-mock_line_liff_id}
+      - SECRET_KEY=${SECRET_KEY:-insurance_line_assistant_secret_key_dev}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+
+  liff-frontend:
+    build:
+      context: ./liff-frontend
+      dockerfile: Dockerfile
+    container_name: insurance_liff
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api/v1
+      - VITE_LIFF_ID=${LINE_LIFF_ID:-mock_line_liff_id}
+
+  admin-cms:
+    build:
+      context: ./admin-cms
+      dockerfile: Dockerfile
+    container_name: insurance_cms
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api/v1
+
+volumes:
+  postgres_data:
+  redis_data:

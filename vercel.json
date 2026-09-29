@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd liff-frontend && npm install && npm run build",
+  "outputDirectory": "liff-frontend/dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
