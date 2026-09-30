@@ -269,11 +269,11 @@ const getStatusLabel = (st: string) => {
 const fetchAgents = async () => {
   loading.value = true
   try {
-    let url = `https://insurance-line-assistant.onrender.com/api/v1/admin/agents?`
+    let url = `https://insurance-line-assistant.onrender.com/api/v1/admin/agents?_t=${Date.now()}&`
     if (searchQuery.value) url += `query=${encodeURIComponent(searchQuery.value)}&`
     if (statusFilter.value) url += `status=${encodeURIComponent(statusFilter.value)}&`
 
-    const res = await fetch(url)
+    const res = await fetch(url, { cache: 'no-store' })
     if (res.ok) {
       agents.value = await res.json()
     }

@@ -28,19 +28,28 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 async def seed_initial_data():
     async with database.AsyncSessionLocal() as session:
-        # 建立預設測試業務員 A001
-        res = await session.execute(select(Agent).where(Agent.agent_code == "A001"))
-        if not res.scalar_one_or_none():
-            agent = Agent(
-                agent_code="A001",
-                name="張大明",
-                phone="0912345678",
-                channel="直營",
-                branch_office="台北一處",
-                job_title="區經理",
-                is_verified=False
-            )
-            session.add(agent)
+        # 建立預設測試業務員名單 (A001 - A008)
+        default_agents = [
+            ("A001", "張大明", "0912345678", "直營", "台北一處", "區經理"),
+            ("A003", "林美麗", "0911111111", "直營", "飛昂通訊處", "業務經理"),
+            ("A004", "徐靜茹", "0912345677", "直營", "飛昂通訊處", "區經理"),
+            ("A005", "黃俊銘", "0912345676", "直營", "飛昂通訊處", "區經理"),
+            ("A006", "賴條生", "0912345666", "直營", "飛昂通訊處", "處經理"),
+            ("A007", "測試1", "0912345667", "直營", "台北一處", "區經理"),
+            ("A008", "測試2", "0987654321", "直營", "台北一處", "區經理")
+        ]
+        for code, name, phone, channel, branch, title in default_agents:
+            res = await session.execute(select(Agent).where(Agent.agent_code == code))
+            if not res.scalar_one_or_none():
+                session.add(Agent(
+                    agent_code=code,
+                    name=name,
+                    phone=phone,
+                    channel=channel,
+                    branch_office=branch,
+                    job_title=title,
+                    is_verified=False
+                ))
 
         # 建立預設通知分類 (notification_category)
         default_notif_cats = [
